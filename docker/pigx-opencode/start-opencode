@@ -1,0 +1,15 @@
+#!/bin/sh
+# Docker starts this process as the same numeric user that AIO initializes.
+set -eu
+unset SANDBOX_API_KEY
+export HOME="/home/$USER"
+while [ ! -w "$HOME" ] || ! id -nu >/dev/null 2>&1; do
+    sleep 0.1
+done
+cd "$WORKSPACE"
+OPENCODE_CONFIG_CONTENT=$(jq -nc --arg name "${PIGX_MODEL_NAME:?}" --arg url "${PIGX_MODEL_BASE_URL:?}" \
+    --argjson limit "${PIGX_MODEL_RESPONSE_LIMIT:-0}" -f /opt/pigx/opencode-config.jq)
+export OPENCODE_CONFIG_CONTENT
+export XDG_DATA_HOME="$WORKSPACE/.opencode-data"
+export XDG_CACHE_HOME="$WORKSPACE/.opencode-cache"
+exec opencode serve --hostname 0.0.0.0 --port 4096
